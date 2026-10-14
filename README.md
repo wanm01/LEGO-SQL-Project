@@ -90,7 +90,7 @@ year_totals AS (
 )
 ```
 
-This section calculates each colour’s prevalence by dividing its annual piece quantity by the total piece quantity for the same year. Casting the numerator to numeric preserves decimal values, NULLIF protects against division by zero, and ROUND limits the result to four decimal places. The result is a proportion—for example, 0.1250 represents 12.5% when formatted as a percentage in Tableau.
+This section calculates each colour’s prevalence by dividing its annual piece quantity by the total piece quantity for the same year. Casting the numerator to numeric preserves decimal values, NULLIF protects against division by zero, and ROUND limits the result to four decimal places (which can then be formatted as a percentage in Tableau).
 ```
 ROUND(
     YCQ.part_colour_quantity::numeric
@@ -107,3 +107,5 @@ INNER JOIN year_totals AS YT
 INNER JOIN analysis.colors AS C
     ON YCQ.color_id = C.id
 ```
+
+TBC
