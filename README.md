@@ -2,7 +2,7 @@
 This project explores how LEGO’s colour palette has evolved by analysing the proportion of produced in each colour year by year.
 <br>
 
-### :a: About
+### :bricks: About
 
 This project examines how LEGO colours have changed over time by analysing the percentage of produced in each colour every year. Namely, this analysis shows how LEGO’s colour mix has evolved from a small group of core colours to a broader palette that includes more transparent, metallic, pearl, and specialised finishes. It also demonstrates that percentage prevalence provides a fairer view of colour trends as it adjusts for changes in the overall number of parts released each year.
 
@@ -60,7 +60,7 @@ REFERENCES analysis.colors(id);
 ```
 
 
-### :white_circle: Data Reshape
+### :toolbox: Data Reshape
 
 The data is initially read and reshaped using an [SQL script](https://github.com/wanm01/LEGO-SQL-Project/blob/main/analysis/lego_colour_analysis.sql), 
 
