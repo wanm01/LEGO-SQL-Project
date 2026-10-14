@@ -62,7 +62,7 @@ REFERENCES analysis.colors(id);
 
 ### :toolbox: Data Reshape
 
-The data is initially read and reshaped using an [SQL script](https://github.com/wanm01/LEGO-SQL-Project/blob/main/analysis/lego_colour_analysis.sql), 
+The data is initially read and reshaped using an [SQL script](https://github.com/wanm01/LEGO-SQL-Project/blob/main/analysis/lego_colour_analysis.sql).
 
 This script analyses how LEGO’s colour mix changes by the release year of the sets containing those parts. For every release year and colour, it calculates colour variety, colours by piece proportion, and colours by set proportion.
 
