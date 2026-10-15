@@ -59,7 +59,6 @@ ADD FOREIGN KEY (color_id)
 REFERENCES analysis.colors(id);
 ```
 
-
 ### :toolbox: Data Reshape
 
 The data is initially read and reshaped using an [SQL script](https://github.com/wanm01/LEGO-SQL-Project/blob/main/analysis/lego_colour_analysis.sql).
@@ -107,6 +106,8 @@ INNER JOIN year_totals AS YT
 INNER JOIN analysis.colors AS C
     ON YCQ.color_id = C.id
 ```
+
+The output of this process is this dataset: [CSV file](https://github.com/wanm01/LEGO-SQL-Project/blob/main/data/lego_colour_yearly_metrics.csv)
 
 ### :waffle: The Waffle Chart
 
@@ -184,6 +185,8 @@ expanded AS (
 )
 ```
 
+The output of this process is this dataset: [CSV file](https://github.com/wanm01/LEGO-SQL-Project/blob/main/data/lego_colour_waffle.csv)
+
 After initially plotting the above data in Tableau, I was not satisfied with its appearance. Therefore, I decided to create an additional script that would plot a border around the shape of the LEGO brick to better define its shape. 
 
 This section retrieves the distinct non-null years from the yearly colour metrics view, ensuring the outlines cover the same years as the main data.
@@ -230,4 +233,7 @@ FROM source_years AS y
 CROSS JOIN outline_scaffold AS s
 ORDER BY y.year, s.point_order;
 ```
+
+The output of this process is this dataset: [CSV file](https://github.com/wanm01/LEGO-SQL-Project/blob/main/data/lego_brick_outline.csv)
+
 
