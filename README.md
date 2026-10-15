@@ -108,4 +108,126 @@ INNER JOIN analysis.colors AS C
     ON YCQ.color_id = C.id
 ```
 
-TBC
+### :waffle: The Waffle Chart
+
+The data is then transformed into a format suitable for creating waffle charts using an [SQL script](https://github.com/wanm01/LEGO-SQL-Project/blob/main/analysis/lego_colour_waffle_chart.sql).
+
+Each year is represented by a brick containing 400 cells, with each cell representing 0.25% of that year’s total pieces. Colours are assigned cells in proportion to their annual piece quantities.
+
+This section generates coordinates for the brick’s rectangular body and two studs. Together, they form 400 cells: 320 for the body and 80 for the studs. Each cell receives a fill-order number, moving from bottom-left to top-right.
+```
+body AS (
+    SELECT g.x, g2.y
+    FROM generate_series(1, 32) AS g(x)
+    CROSS JOIN generate_series(1, 10) AS g2(y)
+),
+
+studs AS (
+    SELECT g.x, g2.y
+    FROM generate_series(4, 13) AS g(x)
+    CROSS JOIN generate_series(11, 14) AS g2(y)
+
+    UNION ALL
+
+    SELECT g.x, g2.y
+    FROM generate_series(20, 29) AS g(x)
+    CROSS JOIN generate_series(11, 14) AS g2(y)
+),
+```
+
+The script calculates the ideal number of cells for each colour using its share of annual piece quantities.
+```
+s.part_colour_quantity::numeric
+/ NULLIF(s.part_total_quantity, 0) * 400
+AS ideal_cells
+```
+
+It then rounds down each allocation and distributes the remaining cells to colours with the largest fractional remainders. This ensures each year totals exactly 400 cells while keeping the allocations close to the original proportions.
+```
+r.base_cells
++ CASE
+    WHEN r.remainder_rank <= d.cells_to_assign THEN 1
+    ELSE 0
+  END AS cell_count
+```
+
+This section uses cumulative totals to give each colour a start and end position within the 400-cell fill sequence. Colours are arranged alphabetically, so each colour occupies a consecutive band of cells.
+```
+COALESCE(
+    SUM(a.cell_count) OVER (
+        PARTITION BY a.year
+        ORDER BY a.colour_name
+        ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
+    ),
+    0
+) + 1 AS start_pos,
+
+SUM(a.cell_count) OVER (
+    PARTITION BY a.year
+    ORDER BY a.colour_name
+    ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+) AS end_pos
+```
+
+The script expands each colour’s allocated range into individual cell records, then joins them to the brick coordinates. The final output includes the year, cell position, colour name, RGB code and underlying metrics.
+```
+expanded AS (
+    SELECT
+        b.year,
+        b.colour_name,
+        gs.fill_order
+    FROM colour_bands AS b
+    CROSS JOIN LATERAL generate_series(
+        b.start_pos::bigint,
+        b.end_pos::bigint
+    ) AS gs(fill_order)
+)
+```
+
+After initially plotting the above data in Tableau, I was not satisfied with its appearance. Therefore, I decided to create an additional script that would plot a border around the shape of the LEGO brick to better define its shape. 
+
+This section retrieves the distinct non-null years from the yearly colour metrics view, ensuring the outlines cover the same years as the main data.
+```
+WITH source_years AS (
+    SELECT DISTINCT year
+    FROM analysis.lego_colour_yearly_metrics
+    WHERE year IS NOT NULL
+),
+```
+
+The outline_scaffold defines an ordered sequence of coordinates tracing the brick’s body and two studs. The half-unit coordinates place the outline around the outer edges of the waffle cells, rather than through their centres.
+```
+outline_scaffold AS (
+    SELECT
+        1 AS point_order,
+        0.5 AS outline_x,
+        0.5 AS outline_y,
+        'bottom-left of body'
+
+    UNION ALL SELECT 2, 32.5, 0.5, 'bottom-right of body'
+    UNION ALL SELECT 3, 32.5, 10.5, 'top-right of body'
+    UNION ALL SELECT 4, 29.5, 10.5, 'right edge of right stud'
+    UNION ALL SELECT 5, 29.5, 14.5, 'top-right of right stud'
+    -- Remaining points trace the rest of the brick.
+```
+
+The point_order field provides the drawing sequence for Tableau’s Path shelf. Repeating the starting coordinate at the end closes the outline. The script repeats that closing point twice; the second repetition is redundant and does not change the shape.
+```
+UNION ALL SELECT 12, 0.5, 10.5, 'top-left of body'
+UNION ALL SELECT 13, 0.5, 0.5, 'close: repeat point 1'
+UNION ALL SELECT 14, 0.5, 0.5, 'close: repeat point 1'
+```
+
+The CROSS JOIN pairs every year with every outline point, producing 14 rows per year. The output contains the year, an outline identifier, the drawing order and the X/Y coordinates, ready to form a separate outline layer alongside the coloured waffle cells.
+```
+SELECT
+    y.year,
+    'Brick' AS outline_id,
+    s.point_order,
+    s.outline_x,
+    s.outline_y
+FROM source_years AS y
+CROSS JOIN outline_scaffold AS s
+ORDER BY y.year, s.point_order;
+```
+
