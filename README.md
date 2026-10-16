@@ -115,7 +115,7 @@ The data is then transformed into a format suitable for creating waffle charts u
 
 Each year is represented by a brick containing 400 cells, with each cell representing 0.25% of that year’s total pieces. Colours are assigned cells in proportion to their annual piece quantities.
 
-This section generates coordinates for the brick’s rectangular body and two studs. Together, they form 400 cells: 320 for the body and 80 for the studs. Each cell receives a fill-order number, moving from bottom-left to top-right.
+This section generates coordinates for the brick’s rectangular body and two studs. This is made up of 400 cells: 320 for the body and 80 for the studs. Each cell receives a fill-order number from bottom-left to top-right.
 ```
 body AS (
     SELECT g.x, g2.y
@@ -136,7 +136,7 @@ studs AS (
 ),
 ```
 
-The script calculates the ideal number of cells for each colour using its share of annual piece quantities.
+The script calculates the number of cells for each colour using its share of annual piece quantities.
 ```
 s.part_colour_quantity::numeric
 / NULLIF(s.part_total_quantity, 0) * 400
@@ -198,7 +198,7 @@ WITH source_years AS (
 ),
 ```
 
-The outline_scaffold defines an ordered sequence of coordinates tracing the brick’s body and two studs. The half-unit coordinates place the outline around the outer edges of the waffle cells, rather than through their centres.
+The outline_scaffold defines an ordered sequence of coordinates tracing the brick’s body and two studs. The half-unit coordinates place the outline around the outer edges of the cells instead of through their centres.
 ```
 outline_scaffold AS (
     SELECT
@@ -214,14 +214,14 @@ outline_scaffold AS (
     -- Remaining points trace the rest of the brick.
 ```
 
-The point_order field provides the drawing sequence for Tableau’s Path shelf. Repeating the starting coordinate at the end closes the outline. The script repeats that closing point twice; the second repetition is redundant and does not change the shape.
+The point_order field provides the drawing sequence for Tableau’s Path shelf. Repeating the starting coordinate at the end closes the outline.
 ```
 UNION ALL SELECT 12, 0.5, 10.5, 'top-left of body'
 UNION ALL SELECT 13, 0.5, 0.5, 'close: repeat point 1'
 UNION ALL SELECT 14, 0.5, 0.5, 'close: repeat point 1'
 ```
 
-The CROSS JOIN pairs every year with every outline point, producing 14 rows per year. The output contains the year, an outline identifier, the drawing order and the X/Y coordinates, ready to form a separate outline layer alongside the coloured waffle cells.
+The CROSS JOIN pairs every year with every outline point, producing 14 rows per year. The output contains the year, an outline identifier, the drawing order and the X/Y coordinates.
 ```
 SELECT
     y.year,
@@ -235,5 +235,24 @@ ORDER BY y.year, s.point_order;
 ```
 
 The output of this process is this dataset: [CSV file](https://github.com/wanm01/LEGO-SQL-Project/blob/main/data/lego_brick_outline.csv)
+
+### :chart_with_upwards_trend: Visualisation
+
+To explore how LEGO's colour palette has changed over time, I wanted to create a playful, visually engaging dashboard. Apart from creating the LEGO brick-shaped waffle charts, I also used Figma to design the background.
+
+Each LEGO brick represents one year, arranged chronologically from left to right and top to bottom. Every brick contains 400 equally sized cells, with each cell representing 0.25% of the total non-spare pieces included in sets released that year. The cells are coloured to show each LEGO colour’s share—for example, a colour accounting for 20% of that year’s pieces would occupy approximately 80 cells. These allocations are rounded to whole cells, so very small colour shares (<0.125%) do not appear.
+
+The user can hover over a cell in each brick to view the exact % of each colour. The annotations on the dashboard also highlight selected LEGO milestones, adding context to the timeline without interrupting the visual comparison.
+
+### :arrow_forward: Next steps
+- Add interactive colour highlighting and tooltips so users can follow a colour across years.
+- Explore changes by LEGO themes to investigate how different groups of sets contribute to the overall palette.
+- Compare piece share with set prevalence to distinguish colours used in large quantities from those appearing across many sets.
+
+<div style="overflow: hidden;margin: 0 10px 0 0">
+<a href="https://public.tableau.com/app/profile/mandy.wan/viz/LEGOColoursover60Decades/LEGOColours">
+<img src='https://raw.githubusercontent.com/wanm01/LEGO-SQL-Project/refs/heads/main/lego_colours_dashboard.png' width="100%">
+</a>
+</div>
 
 
